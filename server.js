@@ -5,32 +5,27 @@ const authRoutes = require('./auth');
 
 const app = express();
 
-app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
+app.use(cors());
 app.use(express.json());
+
+// Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Auth routes
 app.use('/auth', authRoutes);
 
-// For Vercel serverless functions
-if (process.env.VERCEL) {
-    app.use((req, res, next) => {
-        res.setHeader('Cache-Control', 's-maxage=1, stale-while-revalidate');
-        next();
-    });
-}
+// Handle all other routes for SPA
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
-const PORT = process.env.PORT || 3000;
+// Required for Vercel
+module.exports = app;
 
-// Use this for local development
-if (!process.env.VERCEL) {
+// Start server if not on Vercel
+if (process.env.NODE_ENV !== 'production') {
+    const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
     });
 }
-
-// Required for Vercel
-module.exports = app;
